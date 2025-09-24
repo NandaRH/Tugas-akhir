@@ -1,0 +1,22 @@
+/* Reset dan layout utama */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  background-color: #f9fafb; /* default dashboard bg */
+}
+
+/* Wrapper utama */
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
