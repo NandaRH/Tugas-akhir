@@ -1,43 +1,67 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import "./Sidebar.css";
 
-function Sidebar({ userName }) {
+function Sidebar({ userName, onLogout }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+
+
+
+    // ✅ Fungsi Logout
+  const handleLogout = () => {
+    localStorage.removeItem("token");   // hapus token
+    localStorage.removeItem("userId");  // hapus userId
+    localStorage.removeItem("userName");// hapus nama user
+    navigate("/"); // redirect ke login
+  };
+
+
   return (
-    <aside className="sidebar">
-      <ul className="nav flex-column mt-4">
-        <li className="nav-item">
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      {/* Header */}
+      <div className="sidebar-header">
+        <button
+          className="toggle-btn"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          ☰
+        </button>
+        {!collapsed && <span className="logo-text">ApotekSehat</span>}
+      </div>
+
+      {/* Menu */}
+      <ul className="nav-list">
+        <li>
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
-              "nav-link fw-bold text-same" + (isActive ? " active" : "")
+              "nav-link fw-bold" + (isActive ? " active" : "")
             }
           >
-            Dashboard
+            {!collapsed && "Dashboard"}
           </NavLink>
         </li>
-        <li className="nav-item">
+        <li>
           <NavLink
             to="/stok"
             className={({ isActive }) =>
-              "nav-link fw-bold text-same" + (isActive ? " active" : "")
+              "nav-link fw-bold" + (isActive ? " active" : "")
             }
           >
-            Stok
+            {!collapsed && "Stok"}
           </NavLink>
         </li>
       </ul>
 
-      <div className="user-profile mt-auto">
-        <span className="fw-bold text-same">{userName}</span>
-        <button
-          className="btn btn-sm btn-outline-danger mt-2"
-          onClick={() => {
-            localStorage.clear();
-            window.location.href = "/";
-          }}
-        >
-          Logout
-        </button>
+      {/* Footer */}
+      <div className="sidebar-footer">
+        {!collapsed && <span className="fw-bold">{userName}</span>}
+        {!collapsed && (
+          <button className="btn-logout" onClick={handleLogout}>
+            Logout
+          </button>
+        )}
       </div>
     </aside>
   );

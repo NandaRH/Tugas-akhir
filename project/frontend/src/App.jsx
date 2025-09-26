@@ -1,78 +1,79 @@
-import React from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import Header from "./component/Header";
 import FooterHackCipta from "./component/FooterHackCipta";
 import LoginRegister from "./component/LoginRegister";
 import Dashboard from "./component/dashboard";
+import ProtectedRoute from "./component/ProtectedRoute";
 import Stok from "./component/Stok";
 import TambahStok from "./component/TambahStok";
 import EditStok from "./component/EditStok";
-import ProtectedRoute from "./component/ProtectedRoute";
 
-import "./App.css";
 import "./index.css";
 
-function LayoutWrapper({ children }) {
+function AppWrapper() {
   const location = useLocation();
-  const path = location.pathname;
 
-  let className = "app-main login-page";
-  if (path === "/dashboard" || path.startsWith("/stok")) {
-    className = "dashboard-main";
-  }
+  useEffect(() => {
+    if (location.pathname === "/") {
+      document.body.classList.add("login-body");
+    } else {
+      document.body.classList.remove("login-body");
+    }
+  }, [location]);
 
-  return <main className={className}>{children}</main>;
-}
-
-function App() {
   return (
-    <div className="App">
-      <Header />
-      <LayoutWrapper>
-        <Routes>
-          <Route path="/" element={<LoginRegister />} />
+    <>
+      {/* Header hanya muncul di halaman login */}
+      {location.pathname === "/" && <Header />}
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+      <Routes>
+        <Route path="/" element={<LoginRegister />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stok"
+          element={
+            <ProtectedRoute>
+              <Stok />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stok/tambah"
+          element={
+            <ProtectedRoute>
+              <TambahStok />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stok/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditStok />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
 
-          <Route
-            path="/stok"
-            element={
-              <ProtectedRoute>
-                <Stok />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/stok/tambah"
-            element={
-              <ProtectedRoute>
-                <TambahStok />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/stok/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditStok />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </LayoutWrapper>
-      <FooterHackCipta companyName="ApotekSehat" />
-    </div>
+      {/* Footer juga hanya muncul di login */}
+      {location.pathname === "/" && <FooterHackCipta />}
+    </>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppWrapper />
+    </BrowserRouter>
+  );
+}

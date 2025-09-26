@@ -2,13 +2,17 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import "./dashboard.css";
 
-const API_URL = import.meta.env.VITE_API_URL; // 🔑 ambil dari .env
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Dashboard() {
   const [barangMasuk, setBarangMasuk] = useState([]);
   const [barangKeluar, setBarangKeluar] = useState([]);
+  const [barangExpired, setBarangExpired] = useState([]);
   const [history, setHistory] = useState([]);
   const [editHistory, setEditHistory] = useState([]);
+  const [totalStok, setTotalStok] = useState(0);
+  const [totalMasuk, setTotalMasuk] = useState(0);
+  const [totalKeluar, setTotalKeluar] = useState(0);
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
@@ -22,186 +26,210 @@ function Dashboard() {
     }
     setUserName(name || "User");
 
-    // Dummy data barang masuk & keluar
-    setBarangMasuk([
-      { nama: "Indomie Goreng", jumlah: 20 },
-      { nama: "Telur Ayam", jumlah: 50 },
-      { nama: "Minyak Goreng", jumlah: 10 },
-    ]);
+    // Barang Masuk
+    fetch(`${API_URL}/api/stok/barang-masuk`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const rows = Array.isArray(data) ? data.slice(0, 5) : [];
+        setBarangMasuk(rows);
+        setTotalMasuk(rows.reduce((sum, item) => sum + (item.jumlah || 0), 0));
+      });
 
-    setBarangKeluar([
-      { nama: "Roti Tawar", jumlah: 15 },
-      { nama: "Obat Flu", jumlah: 8 },
-    ]);
+    // Barang Keluar
+    fetch(`${API_URL}/api/stok/barang-keluar`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const rows = Array.isArray(data) ? data.slice(0, 5) : [];
+        setBarangKeluar(rows);
+        setTotalKeluar(rows.reduce((sum, item) => sum + (item.jumlah || 0), 0));
+      });
+      
+      // Barang Mau Expired
+      fetch(`${API_URL}/api/stok/barang-expired`, {
+      headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => res.json())
+      .then((data) =>
+       setBarangExpired(Array.isArray(data) ? data.slice(-5).reverse() : [])
+      );
 
-    // Fetch login history
+    // History Login
     fetch(`${API_URL}/api/auth/history`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setHistory(Array.isArray(data) ? data : []))
-      .catch(() => alert("Gagal ambil history login"));
+      .then((data) => setHistory(Array.isArray(data) ? data.slice(0, 5) : []));
 
-    // Fetch edit history
-    fetch(`${API_URL}/api/auth/edit-history`, {
+    // Edit History
+    fetch(`${API_URL}/api/stok/edit-history/list`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setEditHistory(Array.isArray(data) ? data : []))
-      .catch(() => console.log("Belum ada edit history"));
+      .then((data) => setEditHistory(Array.isArray(data) ? data.slice(0, 5) : []));
+
+    // Total Nilai Stok
+    fetch(`${API_URL}/api/stok/total-nilai`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setTotalStok(data.total || 0));
   }, []);
 
-  const formatDateTime = (datetime) => {
-    const d = new Date(datetime);
-    const tgl = d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const jam = d.toLocaleTimeString("id-ID", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    return `${tgl} ${jam}`;
-  };
-
-  const getName = (row) =>
-    row?.username || row?.user_name || row?.full_name || row?.name || "User";
-
   return (
-    <div className="dashboard-container">
+    <div className="d-flex">
       <Sidebar userName={userName} />
 
-      <main className="content">
-        <h2 className="fw-bold text-same">Dashboard</h2>
-        <p className="text-same">Selamat datang, {userName}!</p>
+      <main className="content flex-grow-1 p-4">
+        <h2 className="fw-bold">Dashboard</h2>
+        <p>Selamat datang, {userName}!</p>
 
-        {/* Row Atas */}
-        <div className="row mb-4">
-          {/* Barang Masuk */}
-          <div className="col-md-4 mb-3">
-            <div className="card dashboard-card h-100">
-              <div className="card-body d-flex flex-column">
-                <p className="box-title text-center">Barang Masuk</p>
-                <ul className="list-group list-group-flush">
-                  {barangMasuk.map((item, i) => (
-                    <li
-                      key={i}
-                      className="list-group-item d-flex justify-content-between"
-                    >
-                      <span>{item.nama}</span>
-                      <span className="fw-bold">{item.jumlah}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+        {/* Ringkasan */}
+        <div className="row g-3 mb-4">
+          <div className="col-md-4">
+            <div className="card dashboard-card p-3">
+              <h5>Total Nilai Stok</h5>
+              <p className="fs-4 fw-bold text-success">
+                Rp {totalStok.toLocaleString("id-ID")}
+              </p>
             </div>
           </div>
-
-          {/* Barang Keluar */}
-          <div className="col-md-4 mb-3">
-            <div className="card dashboard-card h-100">
-              <div className="card-body d-flex flex-column">
-                <p className="box-title text-center">Barang Keluar</p>
-                <ul className="list-group list-group-flush">
-                  {barangKeluar.map((item, i) => (
-                    <li
-                      key={i}
-                      className="list-group-item d-flex justify-content-between"
-                    >
-                      <span>{item.nama}</span>
-                      <span className="fw-bold">{item.jumlah}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="col-md-4">
+            <div className="card dashboard-card p-3">
+              <h5>Total Barang Masuk</h5>
+              <p className="fs-4 fw-bold text-primary">{totalMasuk}</p>
             </div>
           </div>
-
-          {/* Nilai Stok */}
-          <div className="col-md-4 mb-3">
-            <div className="card dashboard-card text-center h-100">
-              <div className="card-body">
-                <p className="box-title">Nilai Stok</p>
-                <h3>Rp 8.750.000</h3>
-                <small className="text-success">+5% dari bulan lalu</small>
-              </div>
+          <div className="col-md-4">
+            <div className="card dashboard-card p-3">
+              <h5>Total Barang Keluar</h5>
+              <p className="fs-4 fw-bold text-danger">{totalKeluar}</p>
             </div>
           </div>
         </div>
 
-        {/* Row Bawah */}
-        <div className="row">
-          {/* Barang Expired (dummy) */}
-          <div className="col-lg-4 mb-3">
-            <div className="card dashboard-card h-100">
-              <div className="card-body d-flex flex-column">
-                <p className="box-title text-center">Barang Expired</p>
-                <ul className="list-group list-group-flush">
-                  <li className="list-group-item small d-flex justify-content-between">
-                    Susu Ultra 1L <span className="text-danger">20 Sep 2025</span>
-                  </li>
-                  <li className="list-group-item small d-flex justify-content-between">
-                    Roti Tawar <span className="text-danger">18 Sep 2025</span>
-                  </li>
-                  <li className="list-group-item small d-flex justify-content-between">
-                    Obat Flu <span className="text-danger">15 Sep 2025</span>
-                  </li>
-                </ul>
-              </div>
+        {/* Barang Masuk & Keluar */}
+        <div className="row g-3 mb-4">
+          <div className="col-md-4">
+            <div className="card p-3 history-box">
+              <h5>Barang Masuk</h5>
+              <table className="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Nama Barang</th>
+                    <th>Tanggal</th>
+                    <th className="text-success">Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {barangMasuk.map((item, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{item.nama_barang}</strong></td>
+                      <td>{new Date(item.tanggal_masuk).toLocaleDateString("id-ID")}</td>
+                      <td className="text-success fw-bold">{item.jumlah}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* History Login */}
-          <div className="col-lg-4 mb-3">
-            <div className="card dashboard-card h-100">
-              <div className="card-body d-flex flex-column">
-                <p className="box-title text-center">History Login</p>
-                {history.length === 0 ? (
-                  <p className="text-muted text-center flex-grow-1 d-flex align-items-center justify-content-center">
-                    Belum ada history login
-                  </p>
-                ) : (
-                  <ul className="list-group list-group-flush history-scroll">
-                    {history.map((h, i) => (
-                      <li key={i} className="list-group-item small">
-                        <span>
-                          <strong>{getName(h)}</strong> —{" "}
-                          {formatDateTime(h.login_time || h.created_at)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+          <div className="col-md-4">
+            <div className="card p-3 history-box">
+              <h5>Barang Keluar</h5>
+              <table className="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Nama Barang</th>
+                    <th>Tanggal</th>
+                    <th className="text-danger">Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {barangKeluar.map((item, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{item.nama_barang}</strong></td>
+                      <td>{new Date(item.tanggal_keluar).toLocaleDateString("id-ID")}</td>
+                      <td className="text-danger fw-bold">{item.jumlah}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Edit History */}
-          <div className="col-lg-4 mb-3">
-            <div className="card dashboard-card h-100">
-              <div className="card-body d-flex flex-column">
-                <p className="box-title text-center">Edit History</p>
-                {editHistory.length === 0 ? (
-                  <p className="text-muted text-center flex-grow-1 d-flex align-items-center justify-content-center">
-                    Belum ada edit history
-                  </p>
-                ) : (
-                  <ul className="list-group list-group-flush history-scroll">
-                    {editHistory.map((e, i) => (
-                      <li key={i} className="list-group-item small">
-                        <span>
-                          <strong>{getName(e)}</strong> —{" "}
-                          {formatDateTime(e.edit_time || e.created_at)} —{" "}
-                          {e.activity || ""}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+          {/* Barang Mau Expired */}
+  <div className="col-md-4">
+    <div className="card p-3 history-box">
+      <h5>Barang Expired</h5>
+           <table className="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Nama Barang</th>
+                    <th className="text-warning">Tanggal</th>
+                    <th>Jumlah</th>
+                  </tr>
+                </thead>
+                <tbody>
+        {barangExpired.map((item, idx) => (
+          <tr key={idx}>
+            <td><strong>{item.nama_barang}</strong> {" "}</td>
+            <td><span className="text-warning">{new Date(item.expired).toLocaleDateString("id-ID")} {" "}</span></td>
+            <td>{item.stok} stok</td>
+          </tr>
+        ))}
+        </tbody>
+        </table>
+       </div>
+     </div>
+    </div>
+
+        {/* History Login & Edit History */}
+        <div className="row g-3">
+          <div className="col-md-6">
+            <div className="card p-3 history-box">
+              <h5>History Login</h5>
+              <table className="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Waktu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map((item, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{item.username}</strong></td>
+                      <td>{new Date(item.login_time).toLocaleString("id-ID")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <div className="card p-3 history-box">
+              <h5>Edit History</h5>
+              <table className="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Aktivitas</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {editHistory.map((item, idx) => (
+                    <tr key={idx}>
+                      <td><strong>{item.full_name || "User"}</strong></td>
+                      <td>{item.activity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
