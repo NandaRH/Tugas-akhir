@@ -1,19 +1,37 @@
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-export function verifyToken(req, res, next) {
+// ✅ Verify Token
+export const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) return res.status(401).json({ error: "No token provided" });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // ✅ sama persis
-    req.user = decoded;
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ error: "Token expired" });
+      }
+      return res.status(403).json({ error: "Invalid token" });
+    }
+
+    req.user = decoded; // { id, role }
     next();
-  } catch (err) {
-    return res.status(403).json({ error: "Invalid or expired token" });
+  });
+};
+
+// ✅ Verify Role
+export const verifyRole = (roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({ error: "Access denied" });
   }
-}
+  next();
+};
+
+// ✅ Verify Admin (shortcut dari verifyRole)
+export const verifyAdmin = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Access denied: Admin only" });
+  }
+  next();
+};

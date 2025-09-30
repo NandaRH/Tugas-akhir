@@ -78,3 +78,33 @@
 .stok-wrapper .btn {
   border-radius: 6px;
 }
+
+/* Modal khusus Detail Barang */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 450px;
+  max-width: 95%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+/* Badge biar stok dan expired lebih menarik */
+.badge {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+}

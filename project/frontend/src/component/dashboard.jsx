@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "./Sidebar";
 import "./dashboard.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -7,7 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL;
 function Dashboard() {
   const [barangMasuk, setBarangMasuk] = useState([]);
   const [barangKeluar, setBarangKeluar] = useState([]);
-  const [barangExpired, setBarangExpired] = useState([]);
+  const [expiredItems, setExpiredItems] = useState([]);
+  const [soonItems, setSoonItems] = useState([]);
   const [history, setHistory] = useState([]);
   const [editHistory, setEditHistory] = useState([]);
   const [totalStok, setTotalStok] = useState(0);
@@ -26,53 +26,73 @@ function Dashboard() {
     }
     setUserName(name || "User");
 
-    // Barang Masuk
-    fetch(`${API_URL}/api/stok/barang-masuk`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const rows = Array.isArray(data) ? data.slice(0, 5) : [];
-        setBarangMasuk(rows);
-        setTotalMasuk(rows.reduce((sum, item) => sum + (item.jumlah || 0), 0));
-      });
+// Barang Masuk (tampilkan list 5 item)
+fetch(`${API_URL}/stok/laporan/barang-masuk`, {
+  headers: { Authorization: `Bearer ${token}` },
+})
+  .then((res) => res.json())
+  .then((data) => {
+    const rows = Array.isArray(data) ? data.slice(0, 5) : [];
+    setBarangMasuk(rows);
+  });
 
-    // Barang Keluar
-    fetch(`${API_URL}/api/stok/barang-keluar`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const rows = Array.isArray(data) ? data.slice(0, 5) : [];
-        setBarangKeluar(rows);
-        setTotalKeluar(rows.reduce((sum, item) => sum + (item.jumlah || 0), 0));
-      });
-      
-      // Barang Mau Expired
-      fetch(`${API_URL}/api/stok/barang-expired`, {
-      headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => res.json())
-      .then((data) =>
-       setBarangExpired(Array.isArray(data) ? data.slice(-5).reverse() : [])
-      );
+// ✅ Total Barang Masuk (semua)
+fetch(`${API_URL}/stok/laporan/total-masuk`, {
+  headers: { Authorization: `Bearer ${token}` },
+})
+  .then((res) => res.json())
+  .then((data) => setTotalMasuk(data.total || 0));
 
-    // History Login
-    fetch(`${API_URL}/api/auth/history`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setHistory(Array.isArray(data) ? data.slice(0, 5) : []));
+// Barang Keluar (tampilkan list 5 item)
+fetch(`${API_URL}/stok/laporan/barang-keluar`, {
+  headers: { Authorization: `Bearer ${token}` },
+})
+  .then((res) => res.json())
+  .then((data) => {
+    const rows = Array.isArray(data) ? data.slice(0, 5) : [];
+    setBarangKeluar(rows);
+  });
 
-    // Edit History
-    fetch(`${API_URL}/api/stok/edit-history/list`, {
-      headers: { Authorization: `Bearer ${token}` },
+// ✅ Total Barang Keluar (semua)
+fetch(`${API_URL}/stok/laporan/total-keluar`, {
+  headers: { Authorization: `Bearer ${token}` },
+})
+  .then((res) => res.json())
+  .then((data) => setTotalKeluar(data.total || 0));
+
+
+// Barang Mau Expired
+fetch(`${API_URL}/stok/laporan/barang-expired`, {
+  headers: { Authorization: `Bearer ${token}` },
+})
+  .then(res => res.json())
+  .then(data => {
+    // Barang sudah expired
+    setExpiredItems(Array.isArray(data.expired) ? data.expired : []);
+    // Barang akan expired ≤ 30 hari
+    setSoonItems(Array.isArray(data.soon) ? data.soon : []);
+  })
+  .catch(err => {
+    console.error("Gagal fetch expired:", err);
+  });
+
+
+    // History Login ✅
+    fetch(`${API_URL}/history/login`, {
+    headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => setEditHistory(Array.isArray(data) ? data.slice(0, 5) : []));
+    .then((res) => res.json())
+    .then((data) => setHistory(Array.isArray(data) ? data.slice(0, 5) : []));
+
+    // Edit History ✅
+    fetch(`${API_URL}/history/edit`, {
+    headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => res.json())
+    .then((data) => setEditHistory(Array.isArray(data) ? data.slice(0, 5) : []));
 
     // Total Nilai Stok
-    fetch(`${API_URL}/api/stok/total-nilai`, {
+    fetch(`${API_URL}/stok/laporan/total-nilai`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -81,41 +101,39 @@ function Dashboard() {
 
   return (
     <div className="d-flex">
-      <Sidebar userName={userName} />
 
       <main className="content flex-grow-1 p-4">
-        <h2 className="fw-bold">Dashboard</h2>
-        <p>Selamat datang, {userName}!</p>
+
 
         {/* Ringkasan */}
         <div className="row g-3 mb-4">
           <div className="col-md-4">
-            <div className="card dashboard-card p-3">
-              <h5>Total Nilai Stok</h5>
-              <p className="fs-4 fw-bold text-success">
+            <div className="card p-3 shadow summary-card border-start border-success border-4">
+              <h6 className="text-muted">Total Nilai Stok</h6>
+              <p className="fs-4 fw-bold text-success mb-0">
                 Rp {totalStok.toLocaleString("id-ID")}
               </p>
             </div>
           </div>
           <div className="col-md-4">
-            <div className="card dashboard-card p-3">
-              <h5>Total Barang Masuk</h5>
-              <p className="fs-4 fw-bold text-primary">{totalMasuk}</p>
+            <div className="card p-3 shadow summary-card border-start border-primary border-4">
+              <h6 className="text-muted">Total Barang Masuk</h6>
+              <p className="fs-4 fw-bold text-primary mb-0">{totalMasuk}</p>
             </div>
           </div>
           <div className="col-md-4">
-            <div className="card dashboard-card p-3">
-              <h5>Total Barang Keluar</h5>
-              <p className="fs-4 fw-bold text-danger">{totalKeluar}</p>
+            <div className="card p-3 shadow summary-card border-start border-danger border-4">
+              <h6 className="text-muted">Total Barang Keluar</h6>
+              <p className="fs-4 fw-bold text-danger mb-0">{totalKeluar}</p>
             </div>
           </div>
         </div>
 
-        {/* Barang Masuk & Keluar */}
+        {/* Barang Masuk, Keluar, Expired */}
         <div className="row g-3 mb-4">
           <div className="col-md-4">
-            <div className="card p-3 history-box">
-              <h5>Barang Masuk</h5>
+            <div className="card p-3 shadow-sm history-box">
+              <h5 className="fw-bold">Barang Masuk</h5>
               <table className="table table-sm align-middle">
                 <thead>
                   <tr>
@@ -138,8 +156,8 @@ function Dashboard() {
           </div>
 
           <div className="col-md-4">
-            <div className="card p-3 history-box">
-              <h5>Barang Keluar</h5>
+            <div className="card p-3 shadow-sm history-box">
+              <h5 className="fw-bold">Barang Keluar</h5>
               <table className="table table-sm align-middle">
                 <thead>
                   <tr>
@@ -161,37 +179,62 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Barang Mau Expired */}
-  <div className="col-md-4">
-    <div className="card p-3 history-box">
-      <h5>Barang Expired</h5>
-           <table className="table table-sm align-middle">
-                <thead>
-                  <tr>
-                    <th>Nama Barang</th>
-                    <th className="text-warning">Tanggal</th>
-                    <th>Jumlah</th>
-                  </tr>
-                </thead>
-                <tbody>
-        {barangExpired.map((item, idx) => (
-          <tr key={idx}>
-            <td><strong>{item.nama_barang}</strong> {" "}</td>
-            <td><span className="text-warning">{new Date(item.expired).toLocaleDateString("id-ID")} {" "}</span></td>
-            <td>{item.stok} stok</td>
+          <div className="col-md-4">
+  <div className="card p-3 shadow-sm history-box">
+    <h5 className="fw-bold">Barang Expired</h5>
+    <table className="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Nama Barang</th>
+          <th className="text-warning">Tanggal</th>
+          <th>Jumlah</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {/* Sudah Expired */}
+        {expiredItems.length > 0 ? (
+          expiredItems.map((item, idx) => (
+            <tr key={`exp-${idx}`} className="table-danger">
+              <td><strong>{item.nama_barang}</strong></td>
+              <td className="text-danger">
+                {new Date(item.expired).toLocaleDateString("id-ID")}
+              </td>
+              <td>{item.stok} stok</td>
+              <td><span className="badge bg-danger">Expired</span></td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="4" className="text-center text-success">
+              Tidak ada barang expired ✅
+            </td>
           </tr>
-        ))}
-        </tbody>
-        </table>
-       </div>
-     </div>
-    </div>
+        )}
 
-        {/* History Login & Edit History */}
+        {/* Segera Expired */}
+        {soonItems.length > 0 &&
+          soonItems.map((item, idx) => (
+            <tr key={`soon-${idx}`} className="table-warning">
+              <td><strong>{item.nama_barang}</strong></td>
+              <td className="text-warning">
+                {new Date(item.expired).toLocaleDateString("id-ID")}
+              </td>
+              <td>{item.stok} stok</td>
+              <td><span className="badge bg-warning text-dark">Segera Expired</span></td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  </div>
+          </div>
+          </div>
+
+        {/* History */}
         <div className="row g-3">
           <div className="col-md-6">
-            <div className="card p-3 history-box">
-              <h5>History Login</h5>
+            <div className="card p-3 shadow-sm history-box">
+              <h5 className="fw-bold">History Login</h5>
               <table className="table table-sm align-middle">
                 <thead>
                   <tr>
@@ -202,7 +245,7 @@ function Dashboard() {
                 <tbody>
                   {history.map((item, idx) => (
                     <tr key={idx}>
-                      <td><strong>{item.username}</strong></td>
+                      <td><strong>{item.full_name || "User"}</strong></td>
                       <td>{new Date(item.login_time).toLocaleString("id-ID")}</td>
                     </tr>
                   ))}
@@ -212,8 +255,8 @@ function Dashboard() {
           </div>
 
           <div className="col-md-6">
-            <div className="card p-3 history-box">
-              <h5>Edit History</h5>
+            <div className="card p-3 shadow-sm history-box">
+              <h5 className="fw-bold">Edit History</h5>
               <table className="table table-sm align-middle">
                 <thead>
                   <tr>

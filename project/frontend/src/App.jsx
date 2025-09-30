@@ -1,72 +1,105 @@
-import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Header from "./component/Header";
-import FooterHackCipta from "./component/FooterHackCipta";
 import LoginRegister from "./component/LoginRegister";
 import Dashboard from "./component/dashboard";
 import ProtectedRoute from "./component/ProtectedRoute";
 import Stok from "./component/Stok";
 import TambahStok from "./component/TambahStok";
-import EditStok from "./component/EditStok";
+import LandingPage from "./pages/LandingPage";
+import ListPelanggan from "./component/ListPelanggan";
+import PelangganStok from "./component/PelangganStok";
+import Settings from "./component/Settings";
+import Layout from "./component/Layout";  // ✅ Layout dengan Sidebar
 
 import "./index.css";
 
 function AppWrapper() {
-  const location = useLocation();
-
-  useEffect(() => {
-    if (location.pathname === "/") {
-      document.body.classList.add("login-body");
-    } else {
-      document.body.classList.remove("login-body");
-    }
-  }, [location]);
-
   return (
-    <>
-      {/* Header hanya muncul di halaman login */}
-      {location.pathname === "/" && <Header />}
+    <Routes>
+      {/* Landing page */}
+      <Route path="/" element={<LandingPage />} />
 
-      <Routes>
-        <Route path="/" element={<LoginRegister />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
+      {/* Login */}
+      <Route path="/login" element={<LoginRegister />} />
+
+      {/* Dashboard & stok (pelanggan & admin) */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={["pelanggan", "admin"]}>
+            <Layout>
               <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/stok"
-          element={
-            <ProtectedRoute>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stok"
+        element={
+          <ProtectedRoute allowedRoles={["pelanggan"]}>
+            <Layout>
               <Stok />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/stok/tambah"
-          element={
-            <ProtectedRoute>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stok/tambah"
+        element={
+          <ProtectedRoute allowedRoles={["pelanggan"]}>
+            <Layout>
               <TambahStok />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/stok/edit/:id"
-          element={
-            <ProtectedRoute>
-              <EditStok />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/stok/edit/:id"
+        element={
+          <ProtectedRoute allowedRoles={["pelanggan"]}>
+            <Layout>
+              <TambahStok />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Footer juga hanya muncul di login */}
-      {location.pathname === "/" && <FooterHackCipta />}
-    </>
+      {/* Halaman admin */}
+      <Route
+        path="/admin/pelanggan"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Layout>
+              <ListPelanggan />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pelanggan/:id/stok"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Layout>
+              <PelangganStok />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Layout>
+              <Settings />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Unauthorized */}
+      <Route path="/unauthorized" element={<h2>Akses Ditolak 🚫</h2>} />
+    </Routes>
   );
 }
 

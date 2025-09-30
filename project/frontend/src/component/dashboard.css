@@ -195,3 +195,19 @@
   max-height: 200px;
   overflow-y: auto;
 }
+
+.summary-card {
+  transition: transform 0.2s ease-in-out;
+}
+.summary-card:hover {
+  transform: translateY(-5px);
+}
+
+.history-box {
+  min-height: 250px;
+}
+
+.table thead th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}

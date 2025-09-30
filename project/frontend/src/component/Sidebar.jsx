@@ -1,21 +1,26 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  HomeIcon,
+  CubeIcon,
+  DocumentTextIcon,
+  UsersIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+} from "@heroicons/react/24/outline";
 import "./Sidebar.css";
 
-function Sidebar({ userName, onLogout }) {
+function Sidebar({ userName }) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const role = localStorage.getItem("role"); // "admin" / "pelanggan"
 
-
-
-    // ✅ Fungsi Logout
   const handleLogout = () => {
-    localStorage.removeItem("token");   // hapus token
-    localStorage.removeItem("userId");  // hapus userId
-    localStorage.removeItem("userName");// hapus nama user
-    navigate("/"); // redirect ke login
+    localStorage.clear();
+    navigate("/");
   };
-
 
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -25,13 +30,18 @@ function Sidebar({ userName, onLogout }) {
           className="toggle-btn"
           onClick={() => setCollapsed(!collapsed)}
         >
-          ☰
+          {collapsed ? (
+            <Bars3Icon className="icon toggle" />
+          ) : (
+            <XMarkIcon className="icon toggle" />
+          )}
         </button>
         {!collapsed && <span className="logo-text">ApotekSehat</span>}
       </div>
 
       {/* Menu */}
       <ul className="nav-list">
+        {/* Semua role punya Dashboard */}
         <li>
           <NavLink
             to="/dashboard"
@@ -39,29 +49,77 @@ function Sidebar({ userName, onLogout }) {
               "nav-link fw-bold" + (isActive ? " active" : "")
             }
           >
-            {!collapsed && "Dashboard"}
+            <HomeIcon className="icon" />
+            {!collapsed && <span>Dashboard</span>}
           </NavLink>
         </li>
-        <li>
-          <NavLink
-            to="/stok"
-            className={({ isActive }) =>
-              "nav-link fw-bold" + (isActive ? " active" : "")
-            }
-          >
-            {!collapsed && "Stok"}
-          </NavLink>
-        </li>
+
+        {/* Menu khusus PELANGGAN */}
+        {role === "pelanggan" && (
+          <>
+            <li>
+              <NavLink
+                to="/stok"
+                className={({ isActive }) =>
+                  "nav-link fw-bold" + (isActive ? " active" : "")
+                }
+              >
+                <CubeIcon className="icon" />
+                {!collapsed && <span>Stok</span>}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/laporan"
+                className={({ isActive }) =>
+                  "nav-link fw-bold" + (isActive ? " active" : "")
+                }
+              >
+                <DocumentTextIcon className="icon" />
+                {!collapsed && <span>Laporan</span>}
+              </NavLink>
+            </li>
+          </>
+        )}
+
+        {/* Menu khusus ADMIN */}
+        {role === "admin" && (
+          <>
+            <li>
+              <NavLink
+                to="/admin/pelanggan"
+                className={({ isActive }) =>
+                  "nav-link fw-bold" + (isActive ? " active" : "")
+                }
+              >
+                <UsersIcon className="icon" />
+                {!collapsed && <span>Daftar Pelanggan</span>}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/admin/settings"
+                className={({ isActive }) =>
+                  "nav-link fw-bold" + (isActive ? " active" : "")
+                }
+              >
+                <Cog6ToothIcon className="icon" />
+                {!collapsed && <span>Pengaturan</span>}
+              </NavLink>
+            </li>
+          </>
+        )}
       </ul>
 
       {/* Footer */}
       <div className="sidebar-footer">
-        {!collapsed && <span className="fw-bold">{userName}</span>}
-        {!collapsed && (
-          <button className="btn-logout" onClick={handleLogout}>
-            Logout
-          </button>
-        )}
+        <button
+          className="btn-logout d-flex align-items-center gap-2"
+          onClick={handleLogout}
+        >
+          <ArrowRightOnRectangleIcon className="icon" />
+          {!collapsed && "Logout"}
+        </button>
       </div>
     </aside>
   );
